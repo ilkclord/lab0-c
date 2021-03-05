@@ -26,8 +26,8 @@ void q_free(queue_t *q)
     /* TODO: How about freeing the list elements and the strings? */
     while (q->head != NULL) {
         list_ele_t *tmp = q->head->next;
-        free(q->value);
-        free(q->next);
+        free(q->head->value);
+        free(q->head->next);
         q->head = tmp;
     }
     /* Free queue structure */
@@ -115,7 +115,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
         return false;
     strncpy(sp, q->head->value, bufsize - 1);
     sp[bufsize - 1] = '\0';
-    lsit_ele_t tmp = q->head->next;
+    list_ele_t tmp = q->head->next;
     free(q->head->value);
     free(q->head->next);
     q->head = tmp;
@@ -199,11 +199,11 @@ list_ele_t *merge_find(int a, list_ele_t *root)
     }
     return root;
 }
-lsit_ele_t *merge_split(list_ele_t *root, int size)
+list_ele_t *merge_split(list_ele_t *root, int size)
 {
     if (size / 2 > 0) {
         list_ele_t *tmp = merge_find(size / 2, root);
-        lsit_ele_t *q2 = tmp->next;
+        list_ele_t *q2 = tmp->next;
         tmp->next = NULL;
         root = merge_split(root, size / 2);
         q2 = merge_split(q2, size - size / 2);
