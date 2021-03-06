@@ -16,7 +16,8 @@ queue_t *q_new()
     if (q == NULL)
         return q;
     q->head = NULL;
-    q->tail = NULL;
+    q->tail = q->head;
+    q->size = 0;
     return q;
 }
 
@@ -24,14 +25,16 @@ queue_t *q_new()
 void q_free(queue_t *q)
 {
     /* TODO: How about freeing the list elements and the strings? */
-    while (q->head != NULL) {
-        list_ele_t *tmp = q->head->next;
-        free(q->head->value);
-        free(q->head->next);
-        q->head = tmp;
+    if (q != NULL) {
+        while (q->head != NULL) {
+            list_ele_t *tmp = q->head->next;
+            free(q->head->value);
+            free(q->head);
+            q->head = tmp;
+        }
+        /* Free queue structure */
+        free(q);
     }
-    /* Free queue structure */
-    free(q);
 }
 /* * Attempt to insert element at head of queue.  * Return true if successful.
  * * Return false if q is NULL or could not allocate space.  * Argument s points
@@ -53,14 +56,16 @@ bool q_insert_head(queue_t *q, char *s)
         free(newh);
         return false;
     }
-    strncpy(tmp, s, strlen(s) + 1);
+    strncpy(tmp, s, strlen(s));
+    tmp[strlen(s)] = '\0';
+    if (q->head == NULL)
+        q->tail = newh;
     newh->value = tmp;
     /* Don't forget to allocate space for the string and copy it */
     /* What if either call to malloc returns NULL? */
     newh->next = q->head;
     q->head = newh;
-    if (q->tail == NULL)
-        q->tail = newh->next;
+    q->size = q->size + 1;
     return true;
 }
 
@@ -87,11 +92,18 @@ bool q_insert_tail(queue_t *q, char *s)
         free(newt);
         return false;
     }
-    strncpy(tmp, s, strlen(s) + 1);
+    strncpy(tmp, s, strlen(s));
+    tmp[strlen(s)] = '\0';
     newt->next = NULL;
     newt->value = tmp;
+    if (q->tail == NULL) {
+        q->tail = newt;
+        q->head = newt;
+        return true;
+    }
     q->tail->next = newt;
     q->tail = newt;
+    q->size = q->size + 1;
     /* Remember: It should operate in O(1) time */
     /* TODO: Remove the above comment when you are about to implement. */
     return true;
@@ -111,14 +123,15 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
     /* TODO: Remove the above comment when you are about to implement. */
     if (q == NULL || q->head == NULL)
         return false;
-    if (sp == NULL)
-        return false;
-    strncpy(sp, q->head->value, bufsize - 1);
-    sp[bufsize - 1] = '\0';
+    if (sp != NULL) {
+        strncpy(sp, q->head->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
     list_ele_t *tmp = q->head->next;
     free(q->head->value);
-    free(q->head->next);
+    free(q->head);
     q->head = tmp;
+    q->size = q->size - 1;
     return true;
 }
 
@@ -131,6 +144,8 @@ int q_size(queue_t *q)
     /* TODO: You need to write the code for this function */
     /* Remember: It should operate in O(1) time */
     /* TODO: Remove the above comment when you are about implement. */
+    if (q == NULL || q->head == NULL)
+        return 0;
     return q->size;
 }
 
@@ -144,9 +159,10 @@ int q_size(queue_t *q)
 void q_reverse(queue_t *q)
 {
     /* TODO: You need to write the code for this function */
-    if (q != NULL && q->head != NULL) {
+    if (q != NULL && q->head != NULL && q->head->next != NULL) {
+        q->tail = q->head;
         list_ele_t *tmp = q->head->next;
-        list_ele_t *tmp2;
+        list_ele_t *tmp2 = NULL;
         q->head->next = NULL;
         while (tmp != NULL) {
             tmp2 = tmp->next;
@@ -154,7 +170,6 @@ void q_reverse(queue_t *q)
             q->head = tmp;
             tmp = tmp2;
         }
-        q->head = tmp;
     }
     /* TODO: Remove the above comment when you are about to implement. */
 }
@@ -214,10 +229,11 @@ list_ele_t *merge_split(list_ele_t *root, int size)
     }
 }
 void q_sort(queue_t *q)
-{  // 9 8 10 7
+{
     /* TODO: You need to write the code for this function */
     if (q == NULL || q->head == NULL || q->head->next == NULL)
         return;
     q->head = merge_split(q->head, q->size);
+    q->tail = merge_find(q->size, q->head);
     /* TODO: Remove the above comment when you are about to implement. */
 }
